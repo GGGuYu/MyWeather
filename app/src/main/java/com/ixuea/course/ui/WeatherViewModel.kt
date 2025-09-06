@@ -122,14 +122,13 @@ class WeatherViewModel(private val locationClient: LocationClient) : ViewModel()
                     it.copy(shouldShowPermissionRationale = true)
                 }
             }
+            ErrorType.LOCATION_FAILURE -> {
+                _locationState.update { it.copy(isLoading = false, error = message) }
+            }
 
             else -> {
 
             }
-//            ErrorType.LOCATION_FAILURE -> {
-//                _locationState.update { it.copy(isLoading = false, error = message) }
-//            }
-//
 //            ErrorType.NETWORK_FAILURE -> {
 //                _weatherState.update { it.copy(isLoading = false, error = message) }
 //            }

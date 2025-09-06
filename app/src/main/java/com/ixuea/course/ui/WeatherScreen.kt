@@ -9,6 +9,7 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +37,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel) {
     val permissionState by viewModel.permissionState.collectAsState()
+    val locationState by viewModel.locationState.collectAsState()
 
     val locationPermissions = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -57,6 +60,7 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
     val context = LocalContext.current
 
     when {
+        // 1. 权限未授予情况
         !permissionState.hasAnyLocationPermission() -> {
             PermissionRationaleView(
                 shouldShowRationale = permissionState.shouldShowPermissionRationale,
@@ -67,9 +71,56 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
             )
         }
 
+        // 2. 加载状态
+        locationState.isLoading
+//                || weatherState.isLoading
+            -> {
+            LoadingScreen()
+        }
+
+        // 3. 错误状态
+        locationState.error != null -> {
+            ErrorScreen(
+                message = locationState.error!!,
+                onRetry = { viewModel.onEvent(WeatherEvent.RequestLocation) }
+            )
+        }
+
         else -> {
             EmptyWeather()
         }
+    }
+}
+
+
+@Composable
+fun ErrorScreen(message: String?, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = message ?: "Unknown error occurred",
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onRetry) {
+            Text("重试")
+        }
+    }
+}
+
+@Composable
+fun LoadingScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
     }
 }
 
