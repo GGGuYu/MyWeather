@@ -2,6 +2,10 @@ package com.ixuea.course.ui
 
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
@@ -49,13 +54,15 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
         }
     }
 
+    val context = LocalContext.current
+
     when {
         !permissionState.hasAnyLocationPermission() -> {
             PermissionRationaleView(
                 shouldShowRationale = permissionState.shouldShowPermissionRationale,
                 onRequestPermission = { permissionLauncher.launch(locationPermissions) },
                 onOpenSettings = {
-//                    openAppSettings(context)
+                    openAppSettings(context)
                 }
             )
         }
@@ -66,9 +73,17 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
     }
 }
 
+private fun openAppSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = Uri.fromParts("package", context.packageName, null)
+    }
+
+    context.startActivity(intent)
+}
+
 @Composable
 fun EmptyWeather(): Unit {
-
+    Text("未知状态")
 }
 
 @Composable
