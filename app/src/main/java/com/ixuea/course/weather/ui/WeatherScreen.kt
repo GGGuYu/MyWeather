@@ -8,6 +8,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -56,8 +58,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.ixuea.course.weather.data.model.Forecast
+import com.ixuea.course.weather.data.model.Weather
 import com.ixuea.course.weather.data.model.WeatherResponse
 import com.ixuea.course.weather.utils.AQICalculator
+import com.ixuea.course.weather.utils.DateFormatter
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -166,6 +170,126 @@ fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
             )
         }
 
+        // 每日预报
+        if (weatherState.forecast.isNotEmpty()) {
+            DailyForecastSection(
+                forecasts = weatherState.forecast
+            )
+        }
+    }
+}
+
+@Composable
+fun DailyForecastSection(forecasts: List<Forecast>) {
+    val dailyForecasts = forecasts.groupBy {
+        Instant.ofEpochSecond(it.dt)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+    }.entries.take(15) //但这个免费api只有未来5天
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "每日预报",
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                .padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            dailyForecasts.forEach { (date, dayForecasts) ->
+                val maxTemp = dayForecasts.maxOf { it.main.temp_max }.toInt()
+                val minTemp = dayForecasts.minOf { it.main.temp_min }.toInt()
+
+                val weather = dayForecasts.first().weather.first()
+
+                DailyForecastItem(
+                    dt = dayForecasts.first().dt,
+                    weather = weather,
+                    maxTemp = maxTemp,
+                    minTemp = minTemp
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun DailyForecastItem(
+    dt: Long,
+    weather: Weather,
+    maxTemp: Int,
+    minTemp: Int
+) {
+    val weatherDesc = remember(weather) {
+        when (weather.main.lowercase(Locale.CHINA)) {
+            "clear" -> "晴"
+            "clouds" -> "多云"
+            "rain" -> "雨"
+            else -> weather.description
+        }
+    }
+
+    val dateLabel = remember(dt) {
+        DateFormatter.getSmartDateLabel(dt)
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = dateLabel,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f)
+        )
+
+        AsyncImage(
+            model = "https://openweathermap.org/img/wn/${weather.icon}.png",
+            contentDescription = null,
+            modifier = Modifier.size(32.dp)
+        )
+
+        // 天气描述
+        Text(
+            text = weatherDesc,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Text(
+                text = "$maxTemp°",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Text(
+                text = "$minTemp°",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
     }
 }
 
