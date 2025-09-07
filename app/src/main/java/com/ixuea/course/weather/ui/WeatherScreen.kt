@@ -110,7 +110,7 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
             ErrorScreen(
                 message = weatherState.error!!,
                 onRetry = {
-//                    viewModel.onEvent(WeatherEvent.RefreshData)
+                    viewModel.onEvent(WeatherEvent.RefreshData)
                 }
             )
         }
@@ -120,7 +120,7 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
             WeatherContent(
                 weatherState = weatherState,
                 onRefresh = {
-//                    viewModel.onEvent(WeatherEvent.RefreshData)
+                    viewModel.onEvent(WeatherEvent.RefreshData)
                 }
             )
         }

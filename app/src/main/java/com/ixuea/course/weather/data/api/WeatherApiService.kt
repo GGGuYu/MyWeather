@@ -46,7 +46,7 @@ interface WeatherApiService {
         fun create(): WeatherApiService {
             val client = OkHttpClient.Builder()
                 .addInterceptor(HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
+                    level = HttpLoggingInterceptor.Level.BASIC
                 })
                 .connectTimeout(10, TimeUnit.SECONDS) // 连接超时
                 .readTimeout(15, TimeUnit.SECONDS)    // 读取超时

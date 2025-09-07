@@ -49,7 +49,14 @@ class WeatherViewModel(
             is WeatherEvent.RequestLocation -> requestLocationWithPermissionCheck()
             is WeatherEvent.LocationUpdate -> onLocationChanged(event.locationData)
             is WeatherEvent.WeatherDataLoaded -> updateWeatherData(event.weather, event.airQuality)
+            is WeatherEvent.RefreshData -> refreshAllData()
+            is WeatherEvent.Error -> handleError(event.message, event.errorType)
         }
+    }
+
+    private fun refreshAllData() {
+        _weatherState.update { it.copy(isLoading = true) }
+        requestLocationWithPermissionCheck()
     }
 
     private fun updateWeatherData(weather: WeatherResponse, airQuality: AirQualityResponse) {
@@ -178,17 +185,13 @@ class WeatherViewModel(
             ErrorType.LOCATION_FAILURE -> {
                 _locationState.update { it.copy(isLoading = false, error = message) }
             }
+            ErrorType.NETWORK_FAILURE -> {
+                _weatherState.update { it.copy(isLoading = false, error = message) }
+            }
 
             else -> {
-
+                _weatherState.update { it.copy(isLoading = false, error = message) }
             }
-//            ErrorType.NETWORK_FAILURE -> {
-//                _weatherState.update { it.copy(isLoading = false, error = message) }
-//            }
-//
-//            else -> {
-//                _weatherState.update { it.copy(isLoading = false, error = message) }
-//            }
         }
     }
 
@@ -218,6 +221,8 @@ sealed class WeatherEvent {
         val airQuality: AirQualityResponse
     ) :
         WeatherEvent()
+    object RefreshData : WeatherEvent()
+    data class Error(val message: String, val errorType: ErrorType) : WeatherEvent()
 }
 
 /**
