@@ -1,4 +1,4 @@
-package com.ixuea.course.ui.theme
+package com.ixuea.course.weather.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

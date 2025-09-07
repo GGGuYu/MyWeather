@@ -1,4 +1,4 @@
-package com.ixuea.course.ui.data.location
+package com.ixuea.course.weather.data.location
 
 import android.Manifest
 import android.content.Context
@@ -10,7 +10,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import com.ixuea.course.ui.LocationData
+import com.ixuea.course.weather.ui.LocationData
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow

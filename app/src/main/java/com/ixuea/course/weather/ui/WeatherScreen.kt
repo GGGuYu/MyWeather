@@ -1,4 +1,4 @@
-package com.ixuea.course.ui
+package com.ixuea.course.weather.ui
 
 
 import android.Manifest

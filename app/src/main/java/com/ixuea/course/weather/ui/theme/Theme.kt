@@ -1,4 +1,4 @@
-package com.ixuea.course.ui.theme
+package com.ixuea.course.weather.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

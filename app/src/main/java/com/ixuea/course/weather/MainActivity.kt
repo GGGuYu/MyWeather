@@ -1,4 +1,4 @@
-package com.ixuea.course.ui
+package com.ixuea.course.weather
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,8 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.android.gms.location.LocationServices
-import com.ixuea.course.ui.data.location.DefaultLocationClient
-import com.ixuea.course.ui.theme.MyWeatherTheme
+import com.ixuea.course.weather.data.location.DefaultLocationClient
+import com.ixuea.course.weather.ui.WeatherScreen
+import com.ixuea.course.weather.ui.WeatherViewModel
+import com.ixuea.course.weather.ui.WeatherViewModelFactory
+import com.ixuea.course.weather.ui.theme.MyWeatherTheme
 
 class MainActivity : ComponentActivity() {
     private val locationClient by lazy {

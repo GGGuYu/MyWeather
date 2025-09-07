@@ -1,4 +1,4 @@
-package com.ixuea.course.ui.theme
+package com.ixuea.course.weather.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

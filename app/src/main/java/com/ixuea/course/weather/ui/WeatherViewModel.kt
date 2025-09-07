@@ -1,12 +1,12 @@
-package com.ixuea.course.ui
+package com.ixuea.course.weather.ui
 
 import android.Manifest
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.ixuea.course.ui.data.location.LocationClient
-import com.ixuea.course.ui.data.location.Resource
+import com.ixuea.course.weather.data.location.LocationClient
+import com.ixuea.course.weather.data.location.Resource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
