@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.ixuea.course.weather.data.model.Forecast
 import com.ixuea.course.weather.data.model.WeatherResponse
 import com.ixuea.course.weather.utils.AQICalculator
@@ -247,6 +248,12 @@ fun HourlyForecastItem(forecast: Forecast) {
 
             Spacer(modifier = Modifier.height(5.dp))
 
+            AsyncImage(
+                model = "https://openweathermap.org/img/wn/${forecast.weather.first().icon}@2x.png",
+                contentDescription = weatherDesc,
+                modifier = Modifier.size(36.dp)
+            )
+
             // 天气描述（紧贴图标下方）
             Text(
                 text = weatherDesc,
@@ -316,6 +323,11 @@ fun CurrentWeatherSection(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 天气图标（大尺寸）
+                AsyncImage(
+                    model = "https://openweathermap.org/img/wn/${weather.weather.first().icon}@4x.png",
+                    contentDescription = weatherDesc,
+                    modifier = Modifier.size(50.dp)
+                )
 
                 // 温度数值（突出显示）
                 Text(

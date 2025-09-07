@@ -63,6 +63,11 @@ dependencies {
 
     implementation("androidx.compose.material:material-icons-extended:1.6.4")
 
+
+    //网络图片框架
+    //https://github.com/coil-kt/coil
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
