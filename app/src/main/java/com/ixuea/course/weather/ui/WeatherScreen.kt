@@ -11,16 +11,25 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.rounded.Air
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,9 +42,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ixuea.course.weather.data.model.WeatherResponse
 import java.util.Locale
 
@@ -126,7 +138,9 @@ fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 当前天气
         weatherState.currentWeather?.let { weather ->
@@ -150,7 +164,124 @@ fun CurrentWeatherSection(weather: WeatherResponse) {
         }
     }
 
-    Text(weatherDesc)
+    Card(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    top = 30.dp,
+                    bottom = 30.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(25.dp)
+        ) {
+            // 城市名称
+            Text(
+                text = "${weather.name} · ${weather.sys.country}",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+
+            // 水平排列图标、温度、描述
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // 天气图标（大尺寸）
+
+                // 温度数值（突出显示）
+                Text(
+                    text = "${weather.main.temp.toInt()}°C",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    lineHeight = 48.sp
+                )
+
+                // 天气描述
+                Text(
+                    text = weatherDesc,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                )
+            }
+
+            // 天气指标
+            WeatherDetailsRow(
+                feelsLike = weather.main.feelsLike.toInt(),
+                humidity = weather.main.humidity,
+                windSpeed = weather.wind.speed,
+                pressure = weather.main.pressure
+            )
+        }
+    }
+}
+
+@Composable
+fun WeatherDetailsRow(feelsLike: Int, humidity: Int, windSpeed: Double, pressure: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        WeatherDetailItem(
+            icon = Icons.Default.Thermostat,
+            value = "$feelsLike°C",
+            label = "体感"
+        )
+
+        WeatherDetailItem(
+            icon = Icons.Default.Opacity,  // 使用湿度图标
+            value = "$humidity%",
+            label = "湿度"
+        )
+
+        WeatherDetailItem(
+            icon = Icons.Rounded.Air,       // 使用空气流动图标
+            value = "${windSpeed.toInt()} km/h",
+            label = "风速"
+        )
+
+        WeatherDetailItem(
+            icon = Icons.Rounded.Speed,     // 使用气压/速度图标
+            value = "$pressure hPa",
+            label = "气压"
+        )
+    }
+}
+
+@Composable
+fun WeatherDetailItem(icon: ImageVector, value: String, label: String) {
+    Column(
+        modifier = Modifier.width(80.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+    }
 }
 
 
