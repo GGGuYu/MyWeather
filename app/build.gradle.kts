@@ -54,6 +54,13 @@ dependencies {
     //https://developers.google.cn/android/guides/setup?hl=zh-cn
     implementation(libs.play.services.location)
 
+
+    // 网络框架
+    //https://github.com/square/retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -7,17 +7,23 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.ixuea.course.weather.data.location.LocationClient
 import com.ixuea.course.weather.data.location.Resource
+import com.ixuea.course.weather.data.model.WeatherResponse
+import com.ixuea.course.weather.data.repository.WeatherRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * 添加ViewModel
  */
-class WeatherViewModel(private val locationClient: LocationClient) : ViewModel() {
+class WeatherViewModel(
+    private val repository: WeatherRepository,
+    private val locationClient: LocationClient
+) : ViewModel() {
     /**
      * 权限状态
      */
@@ -26,6 +32,9 @@ class WeatherViewModel(private val locationClient: LocationClient) : ViewModel()
 
     private val _locationState = MutableStateFlow(LocationState())
     val locationState: StateFlow<LocationState> = _locationState.asStateFlow()
+
+    private val _weatherState = MutableStateFlow(WeatherState())
+    val weatherState: StateFlow<WeatherState> = _weatherState.asStateFlow()
 
     /**
      * 事件入口
@@ -37,6 +46,17 @@ class WeatherViewModel(private val locationClient: LocationClient) : ViewModel()
             is WeatherEvent.PermissionResult -> handlePermissionResult(event.grantedPermissions)
             is WeatherEvent.RequestLocation -> requestLocationWithPermissionCheck()
             is WeatherEvent.LocationUpdate -> onLocationChanged(event.locationData)
+            is WeatherEvent.WeatherDataLoaded -> updateWeatherData(event.weather)
+        }
+    }
+
+    private fun updateWeatherData(weather: WeatherResponse) {
+        _weatherState.update {
+            it.copy(
+                currentWeather = weather,
+                isLoading = false,
+                error = null,
+            )
         }
     }
 
@@ -54,6 +74,26 @@ class WeatherViewModel(private val locationClient: LocationClient) : ViewModel()
 
     private fun fetchWeatherData(location: LocationData) {
         Log.d(TAG, "fetchWeatherData: ${location}")
+
+        _weatherState.update { it.copy(isLoading = true, error = null) }
+
+        viewModelScope.launch {
+            try {
+                val currentWeather =
+                    repository.getCurrentWeather(location.latitude, location.longitude)
+
+                onEvent(
+                    WeatherEvent.WeatherDataLoaded(
+                        weather = currentWeather,
+                    )
+                )
+            } catch (e: Exception) {
+                handleError(
+                    message = "Weather data load failed: ${e.localizedMessage}",
+                    errorType = ErrorType.NETWORK_FAILURE
+                )
+            }
+        }
     }
 
     private fun requestLocationWithPermissionCheck() {
@@ -159,6 +199,12 @@ sealed class WeatherEvent {
     data class PermissionResult(val grantedPermissions: Map<String, Boolean>) : WeatherEvent()
     object RequestLocation : WeatherEvent()
     data class LocationUpdate(val locationData: LocationData) : WeatherEvent()
+    data class WeatherDataLoaded(
+        val weather: WeatherResponse,
+//        val forecast: List<Forecast>,
+//        val airQuality: AirQualityResponse
+    ) :
+        WeatherEvent()
 }
 
 /**
@@ -185,12 +231,23 @@ data class LocationData(
     val longitude: Double
 )
 
-class WeatherViewModelFactory(private val locationClient: LocationClient) :
+data class WeatherState(
+    val currentWeather: WeatherResponse? = null,
+//    val forecast: List<Forecast> = emptyList(),
+//    val aqiResult: AQIResult? = null,
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
+class WeatherViewModelFactory(
+    private val repository: WeatherRepository,
+    private val locationClient: LocationClient
+) :
     ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WeatherViewModel::class.java)) {
-            return WeatherViewModel(locationClient) as T
+            return WeatherViewModel(repository, locationClient) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

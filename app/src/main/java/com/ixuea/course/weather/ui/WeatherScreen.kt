@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -28,16 +30,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ixuea.course.weather.data.model.WeatherResponse
+import java.util.Locale
 
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel) {
     val permissionState by viewModel.permissionState.collectAsState()
     val locationState by viewModel.locationState.collectAsState()
+    val weatherState by viewModel.weatherState.collectAsState()
 
     val locationPermissions = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -72,8 +78,7 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
         }
 
         // 2. 加载状态
-        locationState.isLoading
-//                || weatherState.isLoading
+        locationState.isLoading || weatherState.isLoading
             -> {
             LoadingScreen()
         }
@@ -86,10 +91,66 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
             )
         }
 
+        weatherState.error != null -> {
+            ErrorScreen(
+                message = weatherState.error!!,
+                onRetry = {
+//                    viewModel.onEvent(WeatherEvent.RefreshData)
+                }
+            )
+        }
+
+        // 4. 正常显示天气数据
+        weatherState.currentWeather != null -> {
+            WeatherContent(
+                weatherState = weatherState,
+                onRefresh = {
+//                    viewModel.onEvent(WeatherEvent.RefreshData)
+                }
+            )
+        }
+
         else -> {
             EmptyWeather()
         }
     }
+}
+
+/**
+ * 天气
+ */
+@Composable
+fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+    ) {
+        // 当前天气
+        weatherState.currentWeather?.let { weather ->
+            CurrentWeatherSection(weather)
+        }
+    }
+}
+
+
+/**
+ * 当前天气
+ */
+@Composable
+fun CurrentWeatherSection(weather: WeatherResponse) {
+    val weatherDesc = remember(weather.weather) {
+        when (weather.weather.first().main.lowercase(Locale.CHINA)) {
+            "clear" -> "晴"
+            "clouds" -> "多云"
+            "rain" -> "雨"
+            else -> weather.weather.first().description
+        }
+    }
+
+    Text(weatherDesc)
 }
 
 

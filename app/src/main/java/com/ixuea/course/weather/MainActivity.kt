@@ -14,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.android.gms.location.LocationServices
+import com.ixuea.course.weather.data.api.WeatherApiService
 import com.ixuea.course.weather.data.location.DefaultLocationClient
+import com.ixuea.course.weather.data.repository.WeatherRepository
 import com.ixuea.course.weather.ui.WeatherScreen
 import com.ixuea.course.weather.ui.WeatherViewModel
 import com.ixuea.course.weather.ui.WeatherViewModelFactory
@@ -27,8 +29,11 @@ class MainActivity : ComponentActivity() {
             LocationServices.getFusedLocationProviderClient(this)
         )
     }
+    private val apiService by lazy { WeatherApiService.create() }
+    private val repository by lazy { WeatherRepository(apiService) }
+
     private val viewModel: WeatherViewModel by viewModels {
-        WeatherViewModelFactory(locationClient)
+        WeatherViewModelFactory(repository, locationClient)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
