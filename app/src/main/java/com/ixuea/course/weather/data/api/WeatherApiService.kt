@@ -1,5 +1,7 @@
 package com.ixuea.course.weather.data.api
 
+import com.ixuea.course.weather.config.Config
+import com.ixuea.course.weather.data.model.AirQualityResponse
 import com.ixuea.course.weather.data.model.WeatherResponse
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -25,6 +27,15 @@ interface WeatherApiService {
         @Query("lang") lang: String = "zh_cn",
         @Query("units") units: String = "metric"
     ): WeatherResponse
+
+
+    @GET("data/2.5/air_pollution")
+    suspend fun getAirQuality(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("appid") apiKey: String = Config.API_KEY
+    ): AirQualityResponse
+
 
     companion object {
         const val BASE_URL = "https://api.openweathermap.org/"

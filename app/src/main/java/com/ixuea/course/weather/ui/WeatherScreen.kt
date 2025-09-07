@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -33,6 +34,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ixuea.course.weather.data.model.WeatherResponse
+import com.ixuea.course.weather.utils.AQICalculator
 import java.util.Locale
 
 @Composable
@@ -144,7 +147,7 @@ fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
     ) {
         // 当前天气
         weatherState.currentWeather?.let { weather ->
-            CurrentWeatherSection(weather)
+            CurrentWeatherSection(weather, weatherState.aqiResult)
         }
     }
 }
@@ -154,7 +157,10 @@ fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
  * 当前天气
  */
 @Composable
-fun CurrentWeatherSection(weather: WeatherResponse) {
+fun CurrentWeatherSection(
+    weather: WeatherResponse,
+    aqiResult: AQICalculator.AQIResult?
+) {
     val weatherDesc = remember(weather.weather) {
         when (weather.weather.first().main.lowercase(Locale.CHINA)) {
             "clear" -> "晴"
@@ -212,6 +218,11 @@ fun CurrentWeatherSection(weather: WeatherResponse) {
                 )
             }
 
+            //空气指数
+            aqiResult?.let {
+                AirQualityBadge(it)
+            }
+
             // 天气指标
             WeatherDetailsRow(
                 feelsLike = weather.main.feelsLike.toInt(),
@@ -220,6 +231,34 @@ fun CurrentWeatherSection(weather: WeatherResponse) {
                 pressure = weather.main.pressure
             )
         }
+    }
+}
+
+@Composable
+fun AirQualityBadge(aqiResult: AQICalculator.AQIResult) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Surface(
+            color = aqiResult.bgColor.copy(alpha = 0.2f),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Text(
+                text = "空气${aqiResult.level} ${aqiResult.aqi}",
+                style = MaterialTheme.typography.labelMedium,
+                color = aqiResult.bgColor,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            )
+        }
+
+        Text(
+            text = aqiResult.advice,
+            style = MaterialTheme.typography.labelSmall,
+            color = aqiResult.bgColor,
+        )
     }
 }
 
