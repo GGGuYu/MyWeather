@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.ixuea.course.weather.data.location.LocationClient
 import com.ixuea.course.weather.data.location.Resource
 import com.ixuea.course.weather.data.model.AirQualityResponse
+import com.ixuea.course.weather.data.model.Forecast
 import com.ixuea.course.weather.data.model.WeatherResponse
 import com.ixuea.course.weather.data.repository.WeatherRepository
 import com.ixuea.course.weather.utils.AQICalculator
@@ -48,7 +49,11 @@ class WeatherViewModel(
             is WeatherEvent.PermissionResult -> handlePermissionResult(event.grantedPermissions)
             is WeatherEvent.RequestLocation -> requestLocationWithPermissionCheck()
             is WeatherEvent.LocationUpdate -> onLocationChanged(event.locationData)
-            is WeatherEvent.WeatherDataLoaded -> updateWeatherData(event.weather, event.airQuality)
+            is WeatherEvent.WeatherDataLoaded -> updateWeatherData(
+                event.weather,
+                event.forecast,
+                event.airQuality
+            )
             is WeatherEvent.RefreshData -> refreshAllData()
             is WeatherEvent.Error -> handleError(event.message, event.errorType)
         }
@@ -59,12 +64,17 @@ class WeatherViewModel(
         requestLocationWithPermissionCheck()
     }
 
-    private fun updateWeatherData(weather: WeatherResponse, airQuality: AirQualityResponse) {
+    private fun updateWeatherData(
+        weather: WeatherResponse,
+        forecast: List<Forecast>,
+        airQuality: AirQualityResponse
+    ) {
         val aqiResult = AQICalculator.calculateAQIFromComponents(airQuality.list.first().components)
 
         _weatherState.update {
             it.copy(
                 currentWeather = weather,
+                forecast = forecast,
                 aqiResult = aqiResult,
                 isLoading = false,
                 error = null,
@@ -101,9 +111,18 @@ class WeatherViewModel(
                     location.longitude
                 )
 
+                //未来5天每3小时天气预报
+                val forecast = repository.getWeatherForecast(
+                    location.latitude,
+                    location.longitude
+                )
+
+
+
                 onEvent(
                     WeatherEvent.WeatherDataLoaded(
                         weather = currentWeather,
+                        forecast = forecast.list ?: emptyList(),
                         airQuality = airQuality,
                     )
                 )
@@ -217,7 +236,7 @@ sealed class WeatherEvent {
     data class LocationUpdate(val locationData: LocationData) : WeatherEvent()
     data class WeatherDataLoaded(
         val weather: WeatherResponse,
-//        val forecast: List<Forecast>,
+        val forecast: List<Forecast>,
         val airQuality: AirQualityResponse
     ) :
         WeatherEvent()
@@ -251,7 +270,7 @@ data class LocationData(
 
 data class WeatherState(
     val currentWeather: WeatherResponse? = null,
-//    val forecast: List<Forecast> = emptyList(),
+    val forecast: List<Forecast> = emptyList(),
     val aqiResult: AQICalculator.AQIResult? = null,
     val isLoading: Boolean = false,
     val error: String? = null

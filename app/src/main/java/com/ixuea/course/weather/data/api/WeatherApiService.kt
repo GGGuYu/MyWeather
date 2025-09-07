@@ -37,6 +37,14 @@ interface WeatherApiService {
     ): AirQualityResponse
 
 
+    @GET("data/2.5/forecast")
+    suspend fun getWeatherForecast(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("appid") apiKey: String = Config.API_KEY,
+        @Query("units") units: String = "metric"
+    ): WeatherResponse
+
     companion object {
         const val BASE_URL = "https://api.openweathermap.org/"
 

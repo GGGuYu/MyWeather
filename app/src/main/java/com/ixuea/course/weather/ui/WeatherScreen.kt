@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -48,10 +51,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ixuea.course.weather.data.model.Forecast
 import com.ixuea.course.weather.data.model.WeatherResponse
 import com.ixuea.course.weather.utils.AQICalculator
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -148,6 +156,113 @@ fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
         // 当前天气
         weatherState.currentWeather?.let { weather ->
             CurrentWeatherSection(weather, weatherState.aqiResult)
+        }
+
+        // 小时预报
+        if (weatherState.forecast.isNotEmpty()) {
+            HourlyForecastSection(
+                forecasts = weatherState.forecast.take(24) // 只显示24小时内的预报
+            )
+        }
+
+    }
+}
+
+
+@Composable
+fun HourlyForecastSection(forecasts: List<Forecast>) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "每小时预报",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(forecasts) { forecast ->
+                HourlyForecastItem(forecast)
+            }
+        }
+    }
+}
+
+@Composable
+fun HourlyForecastItem(forecast: Forecast) {
+    // 时间格式化（HH:mm 和 M/d）
+    val (timeStr, dateStr) = remember(forecast.dt) {
+        val dateTime = Instant.ofEpochSecond(forecast.dt)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDateTime()
+
+        Pair(
+            dateTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+            dateTime.format(DateTimeFormatter.ofPattern("M/d"))
+        )
+    }
+
+    // 天气描述中文化
+    val weatherDesc = remember(forecast.weather) {
+        when (forecast.weather.first().main.lowercase(Locale.CHINA)) {
+            "clear" -> "晴"
+            "clouds" -> "多云"
+            "rain" -> "雨"
+            else -> forecast.weather.first().description
+        }
+    }
+
+
+    Card(
+        modifier = Modifier
+            .width(100.dp)
+            .padding(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp) // 控制垂直间距
+        ) {
+            // 时间（顶部）
+            Text(
+                text = timeStr,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = dateStr,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+
+
+            Spacer(modifier = Modifier.height(5.dp))
+
+            // 天气描述（紧贴图标下方）
+            Text(
+                text = weatherDesc,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(5.dp))
+
+            // 温度（底部）
+            Text(
+                text = "${forecast.main.temp.toInt()}°C",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
