@@ -13,3 +13,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Agent/Skills
+.agents/
+.claude/
+.continue/
+skills/
+skills-lock.json

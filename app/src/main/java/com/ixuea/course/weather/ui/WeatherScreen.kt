@@ -1,13 +1,26 @@
 package com.ixuea.course.weather.ui
 
 
+// ================== Android 基础组件导入 ==================
+// Manifest.permission - 用于定义 Android 权限常量
 import android.Manifest
+// Context - Android 上下文，用于访问系统资源和服务
 import android.content.Context
+// Intent - 用于在组件间传递消息（比如跳转到设置页面）
 import android.content.Intent
+// Uri - 统一资源标识符，用于构建跳转链接
 import android.net.Uri
+// Settings - Android 系统设置相关类
 import android.provider.Settings
+
+// ================== Jetpack Compose 权限相关 ==================
+// rememberLauncherForActivityResult - Compose 中用于请求权限的启动器（替代传统的 onActivityResult）
 import androidx.activity.compose.rememberLauncherForActivityResult
+// ActivityResultContracts.RequestMultiplePermissions - 可以同时请求多个权限的契约
 import androidx.activity.result.contract.ActivityResultContracts
+
+// ================== Compose UI 组件导入 ==================
+// foundation 包：基础布局功能
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,12 +39,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+
+// material.icons - Material Design 图标库
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.Speed
+
+// material3 - Material Design 3 组件（最新版）
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,103 +58,171 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+
+// compose.runtime - Compose 运行时（生命周期、状态管理）
+// Composable - 标记这是一个 Compose 函数
 import androidx.compose.runtime.Composable
+// LaunchedEffect - 在 Compose 中执行副作用（比如启动时检查权限）
 import androidx.compose.runtime.LaunchedEffect
+// collectAsState - 将 Kotlin Flow 转换为 Compose 状态
 import androidx.compose.runtime.collectAsState
+// getValue - 用于解构状态
 import androidx.compose.runtime.getValue
+// remember - 记住计算结果，避免重复计算
 import androidx.compose.runtime.remember
+
+// compose.ui - UI 基础类
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+// LocalContext - 获取当前 Composable 的 Context
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+// Coil - 图片加载库（类似 Glide/Picasso）
 import coil.compose.AsyncImage
+
+// 项目内部导入
 import com.ixuea.course.weather.data.model.Forecast
 import com.ixuea.course.weather.data.model.Weather
 import com.ixuea.course.weather.data.model.WeatherResponse
 import com.ixuea.course.weather.utils.AQICalculator
 import com.ixuea.course.weather.utils.DateFormatter
+
+// Java 时间 API
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * WeatherScreen - 天气主屏幕 Composable 函数
+ * 
+ * 这是整个天气应用的入口 UI 组件
+ * 负责：1. 处理权限申请 2. 根据状态显示不同界面 3. 协调 ViewModel 和 UI
+ * 
+ * @param viewModel - 传入的 ViewModel，管理所有业务逻辑和状态
+ */
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel) {
+    // ================== 步骤1：观察 ViewModel 中的状态 ==================
+    // collectAsState() - 将 StateFlow 转为 Compose 可观察的状态
+    // "by" 关键字 - 使用委托，直接访问值（不用 .value）
+    // 这3个状态任何一个变化，都会触发 UI 重新渲染
+    
+    // permissionState - 权限状态（是否已授权位置权限）
     val permissionState by viewModel.permissionState.collectAsState()
+    // locationState - 定位状态（正在定位/定位成功/失败）
     val locationState by viewModel.locationState.collectAsState()
+    // weatherState - 天气数据状态（加载中/成功/失败）
     val weatherState by viewModel.weatherState.collectAsState()
 
+    // ================== 步骤2：定义要申请的权限数组 ==================
+    // ACCESS_FINE_LOCATION - 精确定位（GPS，精度高，耗电大）
+    // ACCESS_COARSE_LOCATION - 粗略定位（网络/WiFi，精度低，省电）
+    // 同时申请两个，系统会让用户选择一种
     val locationPermissions = arrayOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION,
     )
+
+    // ================== 步骤3：创建权限请求启动器 ==================
+    // rememberLauncherForActivityResult - Compose 中专用的 ActivityResult API
+    // 替代了传统 Android 的 startActivityForResult + onActivityResult
+    // 
+    // ActivityResultContracts.RequestMultiplePermissions - 请求多个权限的契约类
+    // 用户选择后，回调函数会收到 Map<String, Boolean>（权限名 -> 是否授权）
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
+        // 权限请求完成后，通过事件通知 ViewModel
+        // 将结果包装成 WeatherEvent.PermissionResult 事件
         viewModel.onEvent(WeatherEvent.PermissionResult(perms))
     }
 
+    // ================== 步骤4：页面启动时的副作用 ==================
+    // LaunchedEffect(Unit) - 在 Composable 进入组合（显示）时执行一次
+    // Unit 作为 key，意味着只在首次显示时执行，后续重组不会重复执行
+    // 这是 Compose 中处理副作用的标准方式
     LaunchedEffect(Unit) {
+        // 先检查是否已有权限（可能用户之前已经授权过）
         if (permissionState.hasAnyLocationPermission()) {
+            // 如果有权限，直接请求定位
             viewModel.onEvent(WeatherEvent.RequestLocation)
         } else {
+            // 没有权限，弹出系统权限对话框
+            // launch() 方法会触发系统的权限申请弹窗
             permissionLauncher.launch(locationPermissions)
         }
     }
 
+    // ================== 步骤5：获取当前上下文 ==================
+    // LocalContext.current - Compose 提供的环境变量，获取当前 Activity 的 Context
+    // 用于跳转到系统设置页面
     val context = LocalContext.current
 
+    // ================== 步骤6：根据状态决定显示什么界面 ==================
+    // when 表达式按优先级依次判断，匹配到一个就显示对应的 UI
+    // 这种写法叫做 "状态驱动的 UI"，是 Compose 的核心思想
     when {
-        // 1. 权限未授予情况
+        // 【情况1】权限未授予 - 显示权限说明界面
+        // !permissionState.hasAnyLocationPermission() - 检查是否有任一位置权限
         !permissionState.hasAnyLocationPermission() -> {
             PermissionRationaleView(
+                // 是否应该显示权限说明（用户拒绝过但没有勾选"不再询问"）
                 shouldShowRationale = permissionState.shouldShowPermissionRationale,
+                // 点击"授予权限"按钮时的回调
                 onRequestPermission = { permissionLauncher.launch(locationPermissions) },
+                // 点击"去设置中手动开启"时的回调
                 onOpenSettings = {
-                    openAppSettings(context)
+                    openAppSettings(context)  // 跳转到应用设置页面
                 }
             )
         }
 
-        // 2. 加载状态
+        // 【情况2】加载中状态 - 显示转圈动画
+        // 只要定位或天气数据任一在加载，就显示 Loading
         locationState.isLoading || weatherState.isLoading
             -> {
             LoadingScreen()
         }
 
-        // 3. 错误状态
+        // 【情况3】定位出错 - 显示错误界面
+        // locationState.error != null - 定位过程中出错
         locationState.error != null -> {
             ErrorScreen(
-                message = locationState.error!!,
-                onRetry = { viewModel.onEvent(WeatherEvent.RequestLocation) }
+                message = locationState.error!!,  // 错误信息
+                onRetry = { viewModel.onEvent(WeatherEvent.RequestLocation) }  // 点击重试
             )
         }
 
+        // 【情况4】天气数据出错 - 显示错误界面
         weatherState.error != null -> {
             ErrorScreen(
                 message = weatherState.error!!,
                 onRetry = {
-                    viewModel.onEvent(WeatherEvent.RefreshData)
+                    viewModel.onEvent(WeatherEvent.RefreshData)  // 点击刷新
                 }
             )
         }
 
-        // 4. 正常显示天气数据
+        // 【情况5】正常情况 - 显示天气内容
+        // currentWeather != null 说明有天气数据
         weatherState.currentWeather != null -> {
             WeatherContent(
                 weatherState = weatherState,
                 onRefresh = {
-                    viewModel.onEvent(WeatherEvent.RefreshData)
+                    viewModel.onEvent(WeatherEvent.RefreshData)  // 下拉刷新
                 }
             )
         }
 
+        // 【情况6】兜底情况 - 未知状态
         else -> {
             EmptyWeather()
         }
