@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ixuea.course.weather.data.model.AIAdviceEvent
+import dev.jeziellago.compose.markdowntext.MarkdownText
 
 /**
  * AI建议页面
@@ -67,7 +71,9 @@ fun AIScreen(
                             contentDescription = "返回"
                         )
                     }
-                }
+                },
+                // 处理状态栏padding
+                modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars)
             )
         },
         floatingActionButton = {
@@ -86,7 +92,7 @@ fun AIScreen(
         AIAdviceContent(
             adviceState = adviceState,
             onRetry = { viewModel.onEvent(AIAdviceEvent.GenerateAdvice) },
-            modifier = Modifier.padding(paddingValues)
+            contentPadding = paddingValues
         )
     }
 }
@@ -98,13 +104,14 @@ fun AIScreen(
 private fun AIAdviceContent(
     adviceState: com.ixuea.course.weather.data.model.AIAdviceState,
     onRetry: () -> Unit,
-    modifier: Modifier = Modifier
+    contentPadding: PaddingValues
 ) {
     val scrollState = rememberScrollState()
 
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
+            .padding(contentPadding)
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -152,12 +159,15 @@ private fun AIAdviceContent(
                             text = "智能穿衣助手"
                         )
 
-                        // 建议内容
+                        // 建议内容 - 使用Markdown渲染
                         if (adviceState.advice.isNotEmpty()) {
-                            Text(
-                                text = adviceState.advice,
-                                style = MaterialTheme.typography.bodyLarge,
-                                lineHeight = MaterialTheme.typography.bodyLarge.fontSize * 1.6
+                            MarkdownText(
+                                markdown = adviceState.advice,
+                                modifier = Modifier.fillMaxWidth(),
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    lineHeight = MaterialTheme.typography.bodyLarge.fontSize * 1.6
+                                )
                             )
                         } else {
                             Text(
