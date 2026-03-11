@@ -42,8 +42,10 @@ import androidx.compose.foundation.verticalScroll
 
 // material.icons - Material Design 图标库
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.rounded.Air
 import androidx.compose.material.icons.rounded.Speed
@@ -107,9 +109,13 @@ import java.util.Locale
  * 负责：1. 处理权限申请 2. 根据状态显示不同界面 3. 协调 ViewModel 和 UI
  * 
  * @param viewModel - 传入的 ViewModel，管理所有业务逻辑和状态
+ * @param onAIAdviceClick - 点击AI建议按钮的回调
  */
 @Composable
-fun WeatherScreen(viewModel: WeatherViewModel) {
+fun WeatherScreen(
+    viewModel: WeatherViewModel,
+    onAIAdviceClick: () -> Unit = {}
+) {
     // ================== 步骤1：观察 ViewModel 中的状态 ==================
     // collectAsState() - 将 StateFlow 转为 Compose 可观察的状态
     // "by" 关键字 - 使用委托，直接访问值（不用 .value）
@@ -218,7 +224,8 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
                 weatherState = weatherState,
                 onRefresh = {
                     viewModel.onEvent(WeatherEvent.RefreshData)  // 下拉刷新
-                }
+                },
+                onAIAdviceClick = onAIAdviceClick
             )
         }
 
@@ -233,7 +240,11 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
  * 天气
  */
 @Composable
-fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
+fun WeatherContent(
+    weatherState: WeatherState,
+    onRefresh: () -> Unit,
+    onAIAdviceClick: () -> Unit = {}
+) {
     val scrollState = rememberScrollState()
 
     Column(
@@ -243,6 +254,9 @@ fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // AI建议按钮
+        AIButton(onClick = onAIAdviceClick)
+
         // 当前天气
         weatherState.currentWeather?.let { weather ->
             CurrentWeatherSection(weather, weatherState.aqiResult)
@@ -259,6 +273,57 @@ fun WeatherContent(weatherState: WeatherState, onRefresh: () -> Unit) {
         if (weatherState.forecast.isNotEmpty()) {
             DailyForecastSection(
                 forecasts = weatherState.forecast
+            )
+        }
+    }
+}
+
+/**
+ * AI建议按钮
+ */
+@Composable
+fun AIButton(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SmartToy,
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column {
+                    Text(
+                        text = "AI 穿衣建议",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "根据天气智能推荐穿搭",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "进入",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
     }
