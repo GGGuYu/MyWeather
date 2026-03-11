@@ -19,14 +19,16 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // 从local.properties读取Moonshot API Key
+        // 从local.properties读取API Keys
         val localProperties = Properties()
         val localPropertiesFile = rootProject.file("local.properties")
         if (localPropertiesFile.exists()) {
             localProperties.load(localPropertiesFile.inputStream())
         }
         val moonshotApiKey = localProperties.getProperty("MOONSHOT_API_KEY", "")
+        val weatherApiKey = localProperties.getProperty("WEATHER_API_KEY", "")
         buildConfigField("String", "MOONSHOT_API_KEY", "\"$moonshotApiKey\"")
+        buildConfigField("String", "WEATHER_API_KEY", "\"$weatherApiKey\"")
     }
 
     buildTypes {
